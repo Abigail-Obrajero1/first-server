@@ -1,14 +1,19 @@
 // 1. importando el modulo http
-
 import http from 'http';
-
+// Biblioteca path
+import path from 'path';
+// Recreando Built-in variables
+global["__dirname"] = path.dirname(new URL(import.meta.url).pathname);
+global["__filename"] = path.join(new URL(import.meta.url).pathname);
 
 // 2. crear el servidor
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(( _, res) => {
     // logica del server
     // 1. respondiendo al cliente
-    res.write('Hello from the server...');
+    res.write(`
+    __dirname:${__dirname}
+    __filename:${__filename}`);
     // 2. cerrar la conexion
     res.end();
 });
