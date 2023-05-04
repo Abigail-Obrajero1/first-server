@@ -2,7 +2,7 @@
 import http from 'http';
 // Biblioteca path
 import path from "path";
-import fs from "fs";
+import { promises as fs } from 'fs';
 
 // Recreando Built-in variables
 global["__dirname"] = path.dirname(new URL(import.meta.url).pathname);
@@ -26,20 +26,62 @@ const server = http.createServer((req, res) => {
             // Escribiendo la respuesta
             res.write(`
             <html>
-                <head>
-                    <link rel="icon" type="image/png" sizes="32x32" href="https://img.icons8.com/fluency/256/domain.png">
-                    <title>My App</title>
-                </head>
-                <body> 
-                    <h1>&#128534; 404 Recurso no encontrado</h1>
-                    <p>Lo sentimos pero no tenemos lo que buscas...</p>
-                </body>
-            </html>
+        <head>
+          <link rel="icon" type="image/x-icon" sizes="32x32" href="/favicon.ico">
+          <title>My App</title>
+          <style>
+            body {
+              background-color: #D2F5FF;
+              font-family: Times New Roman,Elephant;
+            }
+            h1, h2 {
+              color: #3498DB;
+              text-align: center;
+              margin-top: 50px;
+            }
+            form {
+              margin-top: 30px;
+              text-align: center;
+            }
+            input[type="text"] {
+              width: 300px;
+              padding: 10px;
+              border: none;
+              border-radius: 5px;
+              box-shadow: 0px 0px 5px #3498DB;
+              outline: none;
+            }
+            button[type="submit"] {
+              background-color: #3498DB;
+              color: #fff;
+              border: none;
+              border-radius: 5px;
+              padding: 10px 20px;
+              cursor: pointer;
+              box-shadow: 0px 0px 5px #3498DB;
+              outline: none;
+            }
+            button[type="submit"]:hover {
+              background-color: #2980B9;
+            }
+          </style>
+        </head>
+        <body> 
+          <h1>Hello from my server</h1>
+          <h2>Ingresa un mensaje</h2>
+          <div>
+            <form action="/message" method="POST">
+              <input type="text" name="message">
+              <button type="submit">Send</button>
+            </form>
+          </div>
+        </body>
+      </html>
             `);
-            console.log(`📣 Respondiendo: 404 ${req.url} ${req.method}`);
-            // Estableciendo código de respuesta 
-            res.statusCode = 404;
-            // Cerrando la comunicación 
+            console.log(`📣 Respondiendo: 200 ${req.url} ${req.method}`);
+            // Estableciendo codigo de respuesta
+            res.statusCode = 200;
+            // Cerrando la comunicacion
             res.end();
             break;
         case '/author':
@@ -49,8 +91,8 @@ const server = http.createServer((req, res) => {
             res.write(`
             <html>
                 <head>
-                    <link rel="icon" type="image/png" sizes="32x32" href="https://img.icons8.com/color/48/null/standing-woman.png">
                     <title>My App</title>
+                    <link rel="icon" type="image/x-icon" sizes="32x32" href="/favicon.ico">
                 </head>
                 <body> 
                     <h1 style="color:#EA1955;"> Autor </h1>
@@ -81,12 +123,72 @@ const server = http.createServer((req, res) => {
                 } else {
 
                     res.setHeader('Content-Type', 'image/x-icon');
-                   
+
                     res.end(data);
 
                 }
             });
             break;
+
+            case "/message":
+                // Verificando si es post
+                if (method === "POST") {
+                  // Se crea una variable para almacenar los
+                      // Datos entrantes del cliente
+                  let body = "";
+                  // Se registra un manejador de eventos
+                  // Para la recepción de datos
+                  req.on("data", (data => {
+                    body += data;
+                    if (body.length > 1e6) return req.socket.destroy();
+                  }));
+                  // Se registra una manejador de eventos
+                      // para el termino de recepción de datos
+                  req.on("end",() => {
+                    // Procesa el formulario
+                    // Mediante URLSearchParams se extraen
+                    // los campos del formulario
+                    const params = new URLSearchParams(body);
+                    // Se construye un objeto a partir de los datos
+                    // en la variable params
+                    const parsedParams = Object.fromEntries(params);
+                    // Almacenar el mensaje en un archivo
+                    fs.writeFile('message.txt',parsedParams.message);
+                })
+                res.statusCode = 302;
+                res.setHeader('Location','/');
+                // Se finaliza la conexion
+                return res.end();
+                } else {
+                  res.statusCode = 404;
+                  res.write("404: Endpoint no encontrado")
+                  res.end();
+                }
+                break;
+                // Continua con el defautl
+              default:
+                // Peticion raiz
+                // Estableciendo cabeceras
+                res.setHeader('Content-Type', 'text/html');
+                // Escribiendo la respuesta
+                res.write(`
+                <html>
+                  <head>
+                    <link rel="icon" type="image/x-icon" sizes="32x32" href="/favicon.ico">
+                    <title>My App</title>
+                  </head>
+                  <body> 
+                    <h1>&#128534; 404 Recurso no encontrado</h1>
+                    <p>Lo sentimos pero no tenemos lo que buscas...</p>
+                  </body>
+                </html>
+                `);
+                console.log(`📣 Respondiendo: 404 ${req.url} ${req.method}`);
+                // Estableciendo codigo de respuesta
+                res.statusCode = 404;
+                // Cerrando la comunicacion
+                res.end();
+                break;            
     }
 });
 
